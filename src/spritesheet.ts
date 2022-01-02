@@ -5,70 +5,109 @@ import { basename } from "path";
 import Canvas from "canvas";
 const { createCanvas, loadImage } = Canvas;
 
-const defaultOptions = {
-  format: "png",
-  margin: 1,
+export interface IOptions {
+  crop: boolean;
+  margin: number;
+}
+
+/**
+ * Represents the JSON data for a spritesheet atlas.
+ */
+export interface ISpritesheetFrameData {
+  frame: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  trimmed?: boolean;
+  rotated?: boolean;
+  sourceSize?: {
+    w: number;
+    h: number;
+  };
+  spriteSourceSize?: {
+    x: number;
+    y: number;
+  };
+  anchor?: {
+    x: number;
+    y: number;
+  };
+}
+
+/**
+ * Atlas format.
+ */
+export interface ISpritesheetData {
+  frames: { [key: string]: ISpritesheetFrameData };
+  animations?: { [key: string]: string[] };
+  meta: {
+    scale: string;
+  };
+}
+
+interface ICroppedImage {
+  width: number;
+  height: number;
+  image: Canvas.Image;
+  cropped: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+}
+
+const defaultOptions: IOptions = {
   crop: true,
-  name: "spritesheet",
+  margin: 1,
 };
 
-export default async (
-  paths: Array<string>,
-  options: {}
-): Promise<{ json: object; image: Buffer }> => {
-  const { format, margin, crop, name } = {
+export const createSpritesheet = async (
+  imagePaths: string[],
+  options: IOptions
+): Promise<{ atlas: ISpritesheetData; image: Buffer }> => {
+  const { margin, crop } = {
     ...defaultOptions,
     ...options,
   };
 
-  // Check input path
-  if (!paths || !paths.length) {
-    throw new Error("No file given.");
-  }
-
-  // Check outputFormat
-  const supportedFormat = ["png", "jpeg"];
-  if (!supportedFormat.includes(format)) {
-    const supported = JSON.stringify(supportedFormat);
-    throw new Error(
-      `outputFormat should only be one of ${supported}, but "${format}" was given.`
-    );
-  }
-
   // Load all images
-  const loads = paths.map((path) => loadImage(path));
-  const images = await Promise.all(loads);
+  const images = await Promise.all(
+    imagePaths.map(async (path) => await loadImage(path))
+  );
 
-  const playground = createCanvas(0, 0);
-  const playgroundContext = playground.getContext("2d");
+  // Crop all images
+  const croppedImages: ICroppedImage[] = await Promise.all(
+    images.map(async (image) => {
+      const { width, height } = image;
 
-  // Crop all image
-  const data = await Promise.all(
-    images.map(async (source) => {
-      const { width, height } = source;
-      playground.width = width;
-      playground.height = height;
-      playgroundContext.drawImage(source, 0, 0);
+      const cropCanvas = createCanvas(width, height);
+      const cropCanvasCtx = cropCanvas.getContext("2d");
+
+      cropCanvasCtx.drawImage(image, 0, 0);
 
       const cropped = crop
-        ? await cropping(playground)
+        ? await cropping(cropCanvas)
         : {
             top: 0,
             right: 0,
             bottom: 0,
             left: 0,
           };
+
       return {
         width: width - cropped.left - cropped.right + margin,
         height: height - cropped.top - cropped.bottom + margin,
-        source,
+        image,
         cropped,
       };
     })
   );
 
   // Pack images
-  const { items, width, height } = pack(data);
+  const { items, width, height } = pack(croppedImages);
 
   const canvas = createCanvas(width + margin, height + margin);
   const context = canvas.getContext("2d");
@@ -76,21 +115,22 @@ export default async (
   // Draw all images on the destination canvas
   items.forEach(({ x, y, item }) => {
     context.drawImage(
-      item.source,
+      item.image,
       x - item.cropped.left + margin,
       y - item.cropped.top + margin
     );
   });
 
-  items
+  const frames = items
     .sort((a, b) =>
-      basename(a.item.source.src.toString()).localeCompare(
-        basename(b.item.source.src.toString())
+      basename(a.item.image.src.toString()).localeCompare(
+        basename(b.item.image.src.toString())
       )
     )
-    .reduce((images, { x, y, width, height, item: imageData }) => {
-      images[basename(imageData.source.src.toString())] = {
-        // Position and size in the spritesheet
+    .reduce((frames, { x, y, width, height, item: imageData }) => {
+      const name = basename(imageData.image.src.toString());
+
+      frames[name] = {
         frame: {
           x: x + margin,
           y: y + margin,
@@ -101,34 +141,23 @@ export default async (
         trimmed: Object.values(imageData.cropped).some(
           (value) => <number>value > 0
         ),
-        // Relative position and size of the content
         spriteSourceSize: {
           x: imageData.cropped.left,
           y: imageData.cropped.top,
-          w: width - margin,
-          h: height - margin,
         },
-        // File image sizes
         sourceSize: {
-          w: imageData.source.width,
-          h: imageData.source.height,
+          w: imageData.image.width,
+          h: imageData.image.height,
         },
       };
-      return images;
-    }, <{ [key: string]: any }>{});
+      return frames;
+    }, <{ [key: string]: ISpritesheetFrameData }>{});
 
-  const json = {
+  const atlas: ISpritesheetData = {
     meta: {
-      app: "pencil.js/spritesheet",
-      version: "1.0.0",
-      image: `${name}.${format}`,
-      size: {
-        w: width,
-        h: height,
-      },
-      scale: 1,
+      scale: "1",
     },
-    frames: items,
+    frames: frames,
   };
 
   // Write image
@@ -141,7 +170,7 @@ export default async (
   });
 
   return {
-    json,
+    atlas,
     image: image as Buffer,
   };
 };

@@ -1,14 +1,12 @@
-import spritesheet from "./spritesheet.js";
+import { IOptions, createSpritesheet } from "./Spritesheet";
 import { readdir, access, mkdir, writeFile } from "fs/promises";
 import { join, resolve, extname } from "path";
 
 const supportedExtensions = [".png", ".jpg", ".jpeg"];
 
-const options = {
-  name: "spritesheet",
+const options: IOptions = {
   crop: true,
   margin: 1,
-  format: "png",
 };
 
 const imagesDir = join(resolve(), "images");
@@ -23,7 +21,7 @@ const fileNames = (await readdir(imagesDir))
     return join(imagesDir, name);
   });
 
-const { json, image } = await spritesheet(fileNames, options);
+const { atlas, image } = await createSpritesheet(fileNames, options);
 
 try {
   await access(outDir);
@@ -31,9 +29,9 @@ try {
   await mkdir(outDir);
 }
 
-await writeFile(join(outDir, `${options.name}.${options.format}`), image);
+await writeFile(join(outDir, "spritesheet.png"), image);
 
 await writeFile(
-  join(outDir, `${options.name}.json`),
-  JSON.stringify(json, undefined, 2)
+  join(outDir, "spritesheet.json"),
+  JSON.stringify(atlas, undefined, 2)
 );
