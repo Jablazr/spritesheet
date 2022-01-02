@@ -1,0 +1,19 @@
+{
+  "name": "spritesheet",
+  "version": "1.0.0",
+  "description": "Pack images into a spritesheet",
+  "type": "module",
+  "scripts": {
+    "start": "node --loader ts-node/esm --experimental-specifier-resolution=node src/main.ts"
+  },
+  "dependencies": {
+    "bin-pack": "^1.0.2",
+    "canvas": "^2.7.0",
+    "detect-edges": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/bin-pack": "^1.0.1",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  }
+}
