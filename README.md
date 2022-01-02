@@ -21,3 +21,10 @@ Run
     npm start
 
 Get spritesheet from ./images/out
+
+### Planned features
+
+ - support for animations
+ - use the [maxrects-packer](https://www.npmjs.com/package/maxrects-packer) packing algorithm
+ - cli support
+ - use sharp instead of canvas
