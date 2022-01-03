@@ -4,12 +4,12 @@
   "description": "Pack images into a spritesheet",
   "type": "module",
   "scripts": {
-    "start": "node --loader ts-node/esm --experimental-specifier-resolution=node src/main.ts"
+    "start": "node --loader ts-node/esm --experimental-specifier-resolution=node src/main.ts",
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "bin-pack": "^1.0.2",
-    "canvas": "^2.7.0",
-    "detect-edges": "^1.0.1"
+    "canvas": "^2.7.0"
   },
   "devDependencies": {
     "@types/bin-pack": "^1.0.1",

@@ -13,7 +13,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noImplicitAny": true,
-    "typeRoots": ["./node_modules/@types", "./typings"]
+    "noImplicitAny": true
   }
 }

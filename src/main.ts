@@ -1,37 +1,13 @@
-import { IOptions, createSpritesheet } from "./Spritesheet";
-import { readdir, access, mkdir, writeFile } from "fs/promises";
-import { join, resolve, extname } from "path";
+import { createSpritesheet } from "./spritesheet/Spritesheet";
+import { getResolvedImagePaths } from "./io/inputUtils";
+import { writeSpritesheetFiles } from "./io/outputUtils";
 
-const supportedExtensions = [".png", ".jpg", ".jpeg"];
+const imagesDir = "images";
+const spritesheetName = "spritesheet";
+const outDir = imagesDir;
 
-const options: IOptions = {
-  crop: true,
-  margin: 1,
-};
+const imagePaths = await getResolvedImagePaths(imagesDir);
 
-const imagesDir = join(resolve(), "images");
-const outDir = join(imagesDir, "out");
+const { atlas, image } = await createSpritesheet(imagePaths);
 
-// get files with supported extensions
-const fileNames = (await readdir(imagesDir))
-  .filter((name) => {
-    return supportedExtensions.includes(extname(name).toLowerCase());
-  })
-  .map((name) => {
-    return join(imagesDir, name);
-  });
-
-const { atlas, image } = await createSpritesheet(fileNames, options);
-
-try {
-  await access(outDir);
-} catch {
-  await mkdir(outDir);
-}
-
-await writeFile(join(outDir, "spritesheet.png"), image);
-
-await writeFile(
-  join(outDir, "spritesheet.json"),
-  JSON.stringify(atlas, undefined, 2)
-);
+await writeSpritesheetFiles(outDir, spritesheetName, atlas, image);
