@@ -5,8 +5,13 @@ import { packImages } from "./Packing";
 import { processImages } from "./ProcessImages";
 const { loadImage } = Canvas;
 
+export interface ISpritesheetOptions {
+  atlasFormat: string;
+}
+
 export const createSpritesheet = async (
-  imagePaths: string[]
+  imagePaths: string[],
+  options: ISpritesheetOptions
 ): Promise<{ atlas: object; image: Buffer }> => {
   const images = await Promise.all(
     imagePaths.map(async (path) => await loadImage(path))
@@ -18,7 +23,7 @@ export const createSpritesheet = async (
 
   const image = await createSpritesheetImage(sprites, width, height);
 
-  const atlas = createAtlas("pixijs", sprites);
+  const atlas = createAtlas(options.atlasFormat, sprites);
 
   return {
     atlas,

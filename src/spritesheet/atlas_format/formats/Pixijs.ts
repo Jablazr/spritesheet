@@ -1,40 +1,45 @@
 import { basename } from "path";
-import { ISpriteFrame } from "./Packing";
+import { ISpriteFrame } from "../../Packing";
+import { IAtlasData, AtlasMaker } from "../AtlasMaker";
 
-export namespace PixiJS {
-  export interface ISpritesheetFrameData {
-    frame: {
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-    };
-    trimmed?: boolean;
-    rotated?: boolean;
-    sourceSize?: {
-      w: number;
-      h: number;
-    };
-    spriteSourceSize?: {
-      x: number;
-      y: number;
-    };
-    anchor?: {
-      x: number;
-      y: number;
-    };
-  }
+interface IPixijsFrameData {
+  frame: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  trimmed?: boolean;
+  rotated?: boolean;
+  sourceSize?: {
+    w: number;
+    h: number;
+  };
+  spriteSourceSize?: {
+    x: number;
+    y: number;
+  };
+  anchor?: {
+    x: number;
+    y: number;
+  };
+}
 
-  export interface ISpritesheetData {
-    frames: { [key: string]: ISpritesheetFrameData };
-    animations?: { [key: string]: string[] };
-    meta: {
-      scale: string;
-    };
-  }
+interface IPixijsData extends IAtlasData {
+  frames: { [key: string]: IPixijsFrameData };
+  animations?: { [key: string]: string[] };
+  meta: {
+    scale: string;
+  };
+}
 
-  export const createAtlas = (sprites: ISpriteFrame[]): ISpritesheetData => {
-    const frames = sprites
+export class PixiJSAtlasMaker implements AtlasMaker<IPixijsData> {
+  private makeFrames = (
+    sprites: ISpriteFrame[]
+  ): {
+    [key: string]: IPixijsFrameData;
+  } => {
+    return sprites
       .sort((a, b) =>
         basename(a.sprite.image.src.toString()).localeCompare(
           basename(b.sprite.image.src.toString())
@@ -64,13 +69,15 @@ export namespace PixiJS {
           },
         };
         return frames;
-      }, <{ [key: string]: PixiJS.ISpritesheetFrameData }>{});
+      }, <{ [key: string]: IPixijsFrameData }>{});
+  };
 
+  makeAtlas = (sprites: ISpriteFrame[]): IPixijsData => {
     return {
       meta: {
         scale: "1",
       },
-      frames: frames,
+      frames: this.makeFrames(sprites),
     };
   };
 }

@@ -1,10 +1,8 @@
-import { PixiJS } from "./AtlasFormat";
+import { Atlas } from "./atlas_format/Atlas";
 import { ISpriteFrame } from "./Packing";
 
 export const createAtlas = (format: string, sprites: ISpriteFrame[]) => {
-  if (format === "pixijs") {
-    return PixiJS.createAtlas(sprites);
-  }
+  const atlasMaker = Atlas.getFormat(format);
 
-  return PixiJS.createAtlas(sprites);
+  return atlasMaker.makeAtlas(sprites);
 };
